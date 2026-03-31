@@ -303,3 +303,29 @@ def test_validacao_nand2tetris_todos_arquivos():
         f"{arquivos_testados - arquivos_passaram} arquivo(s) falharam!"
     
     print(f"\n🎉 {arquivos_passaram}/{arquivos_testados} arquivos validados com sucesso!")
+
+
+def test_string_com_e_comercial_xml():
+    """Testa string com & comercial que é o caso mais crítico."""
+    code = '"Tom & Jerry < Cats & Dogs>"'
+    scanner = Scanner(code)
+    tokens = [t for t in scanner.tokenize() if t.type != TokenType.EOF]
+    
+    # O XML deve ter escapes corretos, sem double-escape
+    xml = tokens[0].to_xml()
+    
+    # Verifica escapes individuais
+    assert '&amp;' in xml  # & → &amp;
+    assert '&lt;' in xml   # < → &lt;
+    assert '&gt;' in xml   # > → &gt;
+    
+    # Verifica que NÃO há double-escape
+    assert '&amp;lt;' not in xml
+    assert '&amp;gt;' not in xml
+    assert '&amp;quot;' not in xml
+    
+    # Verifica formato completo
+    esperado = '<stringConstant> Tom &amp; Jerry &lt; Cats &amp; Dogs&gt; </stringConstant>'
+    assert xml == esperado
+    
+    print("✅ String com & comercial escapada corretamente!")

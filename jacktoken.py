@@ -83,12 +83,17 @@ class Token:
             return "symbol"
     
     def _escape_xml(self, text: str) -> str:
+        """
+        Escapa caracteres especiais para XML.
+        ⚠️ IMPORTANTE: & deve ser substituído PRIMEIRO!
+        """
         escapes = {
+            '&': '&amp;',   # ✅ PRIMEIRO para evitar double-escape
             '<': '&lt;',
             '>': '&gt;',
             '"': '&quot;',
-            '&': '&amp;'
         }
+        
         for char, escaped in escapes.items():
             text = text.replace(char, escaped)
         return text
