@@ -18,6 +18,7 @@ class Scanner:
             '/': TokenType.SLASH, '&': TokenType.AND,
             '|': TokenType.OR, '<': TokenType.LT,
             '>': TokenType.GT, '=': TokenType.EQ,
+            '~': TokenType.NOT, '=': TokenType.NOT,
         }
 
         # Mapa de palavras reservadas
