@@ -42,3 +42,42 @@ def test_string_basica():
     assert tokens[0].type == TokenType.STRING
     assert tokens[0].lexeme == "hello"  # sem aspas!
     assert tokens[0].to_xml() == '<stringConstant> hello </stringConstant>'
+
+def test_identificadores_e_keywords():
+    """Testa identificadores e palavras reservadas."""
+    # Identificador comum
+    scanner = Scanner("minhaVar123")
+    tokens = scanner.tokenize()
+    assert tokens[0].type == TokenType.IDENT
+    assert tokens[0].lexeme == "minhaVar123"
+    assert tokens[0].to_xml() == '<identifier> minhaVar123 </identifier>'
+
+    # Palavra reservada
+    scanner = Scanner("function")
+    tokens = scanner.tokenize()
+    assert tokens[0].type == TokenType.FUNCTION
+    assert tokens[0].lexeme == "function"
+    assert tokens[0].to_xml() == '<keyword> function </keyword>'
+
+def test_simbolos_xml():
+    """Testa o reconhecimento de símbolos validando a saída XML."""
+    code = "x + y;"
+    scanner = Scanner(code)
+    tokens = scanner.tokenize()
+
+    # ✅ Formato XML esperado (com espaços dentro das tags)
+    esperado_xml = [
+        '<identifier> x </identifier>',
+        '<symbol> + </symbol>',
+        '<identifier> y </identifier>',
+        '<symbol> ; </symbol>',
+    ]
+    
+    # Ignora o token EOF no final
+    tokens_sem_eof = [t for t in tokens if t.type != TokenType.EOF]
+    
+    for i, xml_esperado in enumerate(esperado_xml):
+        assert tokens_sem_eof[i].to_xml() == xml_esperado, \
+            f"Token {i} não corresponde:\n  Esperado: {xml_esperado}\n  Obtido:   {tokens_sem_eof[i].to_xml()}"
+    
+    print("✅ Teste de símbolos com XML passou!")

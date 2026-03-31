@@ -82,6 +82,17 @@ class Scanner:
         self.advance()  # consome a aspa final "
         return Token(TokenType.STRING, lexeme, self.line)
     
+    def read_identifier(self) -> Token:
+        start = self.current
+        # Aceita letras, dígitos e underscore
+        while self.peek().isalnum() or self.peek() == '_':
+            self.advance()
+
+        lexeme = self.code[start:self.current]
+        # Decide: é keyword ou identificador comum?
+        token_type = self.KEYWORDS.get(lexeme, TokenType.IDENT)
+        return Token(token_type, lexeme, self.line)
+    
     def tokenize(self) -> list:
         while self.current < len(self.code):
             self.skip_whitespace()
@@ -90,8 +101,13 @@ class Scanner:
 
             if ch.isdigit():
                 self.tokens.append(self.read_number())
-            elif ch == '"':  # ⭐ Nova condição para strings
+            elif ch == '"': 
                 self.tokens.append(self.read_string())
+            elif ch.isalpha() or ch == '_':  
+                self.tokens.append(self.read_identifier())
+            elif ch in self.SYMBOLS:  
+                self.tokens.append(Token(self.SYMBOLS[ch], ch, self.line))
+                self.advance()
             else:
                 self.advance()
 
