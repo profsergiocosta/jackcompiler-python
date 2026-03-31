@@ -191,3 +191,48 @@ def test_codigo_jack_completo_xml():
     print("✅ Teste de código Jack completo com XML passou!")
     print("\n📄 XML Gerado:")
     print(xml_completo)
+
+def test_validacao_nand2tetris_square_main():
+    """
+    Valida o scanner comparando com o arquivo MainT.xml oficial do nand2tetris.
+    Este é o teste definitivo para o projeto!
+    """
+    import os
+    
+    # Caminhos dos arquivos
+    jack_path = 'tests/nand2tetris_files/Square/Main.jack'
+    xml_referencia_path = 'tests/nand2tetris_files/Square/MainT.xml'
+    
+    # Verifica se os arquivos existem
+    assert os.path.exists(jack_path), f"Arquivo Jack não encontrado: {jack_path}"
+    assert os.path.exists(xml_referencia_path), f"Arquivo XML de referência não encontrado: {xml_referencia_path}"
+    
+    # Lê o código Jack
+    with open(jack_path, 'r', encoding='utf-8') as f:
+        code = f.read()
+    
+    # Gera tokens com seu scanner
+    scanner = Scanner(code)
+    tokens = scanner.tokenize()
+    
+    # Gera XML no formato nand2tetris (sem EOF, com wrapper <tokens>)
+    tokens_sem_eof = [t for t in tokens if t.type != TokenType.EOF]
+    xml_output = "<tokens>\n"
+    for token in tokens_sem_eof:
+        xml_output += token.to_xml() + "\n"
+    xml_output += "</tokens>\n"
+    
+    # Lê o XML de referência
+    with open(xml_referencia_path, 'r', encoding='utf-8') as f:
+        xml_referencia = f.read()
+    
+    # Normaliza quebras de linha (Windows vs Linux)
+    xml_output = xml_output.replace('\r\n', '\n')
+    xml_referencia = xml_referencia.replace('\r\n', '\n')
+    
+    # ✅ Comparação final
+    assert xml_output == xml_referencia, \
+        f"XML não corresponde!\n\nDiferenças encontradas.\nUse 'diff' para ver detalhes."
+    
+    print("✅ Validação nand2tetris Square/Main.jack PASSED!")
+    print(f"   Tokens gerados: {len(tokens_sem_eof)}")

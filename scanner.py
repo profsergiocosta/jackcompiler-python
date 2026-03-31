@@ -64,22 +64,33 @@ class Scanner:
                 break
 
     def skip_line_comment(self):
-        """Pula caracteres até o fim da linha."""
-        while self.peek() not in '\\n\\0':
+        while self.peek() not in '\n\0':
+            self.advance()
+
+        if self.peek() == '\n':
+            self.line += 1
             self.advance()
 
     def skip_block_comment(self):
-        """Pula caracteres até encontrar */"""
-        self.advance()  # consome '/'
-        self.advance()  # consome '*'
+        self.advance()  # '/'
+        self.advance()  # '*'
 
         while True:
-            if self.peek() == '\\0':
+            c = self.peek()
+
+            if c == '\0':
                 raise SyntaxError("Comentário /* não fechado")
-            if self.peek() == '*' and self.peek(1) == '/':
-                self.advance()  # consome '*'
-                self.advance()  # consome '/'
+
+            if c == '\n':
+                self.line += 1
+                self.advance()
+                continue
+
+            if c == '*' and self.peek(1) == '/':
+                self.advance()  # '*'
+                self.advance()  # '/'
                 break
+
             self.advance()
 
     def read_number(self) -> Token:
