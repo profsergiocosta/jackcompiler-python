@@ -59,6 +59,14 @@ def test_identificadores_e_keywords():
     assert tokens[0].lexeme == "function"
     assert tokens[0].to_xml() == '<keyword> function </keyword>'
 
+
+    # Palavra reservada
+    scanner = Scanner("return")
+    tokens = scanner.tokenize()
+    assert tokens[0].type == TokenType.FUNCTION
+    assert tokens[0].lexeme == "return"
+    assert tokens[0].to_xml() == '<keyword> return </keyword>'
+
 def test_simbolos_xml():
     """Testa o reconhecimento de símbolos validando a saída XML."""
     code = "x + y;"
@@ -81,3 +89,105 @@ def test_simbolos_xml():
             f"Token {i} não corresponde:\n  Esperado: {xml_esperado}\n  Obtido:   {tokens_sem_eof[i].to_xml()}"
     
     print("✅ Teste de símbolos com XML passou!")
+
+def test_comentarios_ignorados_xml():
+    """Testa que comentários são ignorados e valida o XML do primeiro token."""
+    code = ''' 
+    /* bloco de comentário */
+    let x = 5; // comentário de linha
+    '''
+    scanner = Scanner(code)
+    tokens = [t for t in scanner.tokenize() if t.type != TokenType.EOF]
+    
+    # ✅ Validação principal: primeiro token deve ser <keyword> let </keyword>
+    assert tokens[0].to_xml() == '<keyword> let </keyword>', \
+        f"Primeiro token incorreto:\n  Esperado: <keyword> let </keyword>\n  Obtido:   {tokens[0].to_xml()}"
+    
+    # ✅ Valida sequência completa de tokens em XML
+    esperado_xml = [
+        '<keyword> let </keyword>',
+        '<identifier> x </identifier>',
+        '<symbol> = </symbol>',
+        '<integerConstant> 5 </integerConstant>',
+        '<symbol> ; </symbol>',
+    ]
+    
+    for i, xml_esperado in enumerate(esperado_xml):
+        assert tokens[i].to_xml() == xml_esperado, \
+            f"Token {i} não corresponde:\n  Esperado: {xml_esperado}\n  Obtido:   {tokens[i].to_xml()}"
+    
+    # ✅ Garante que nenhum token de comentário apareceu
+    for token in tokens:
+        assert "comment" not in token.to_xml().lower(), \
+            f"Comentário não foi ignorado: {token.to_xml()}"
+    
+    print("✅ Teste de comentários com XML passou!")
+
+def test_codigo_jack_completo_xml():
+    """
+    Testa um trecho completo de código Jack validando o XML token por token.
+    Formato exato do nand2tetris: <tokens> wrapper, sem EOF, espaços nas tags.
+    """
+    code = '''class Main {
+    function void main() {
+        let x = 5;
+        return;
+    }
+}'''
+    
+    scanner = Scanner(code)
+    tokens = scanner.tokenize()
+    
+    # ✅ Remove o token EOF (não aparece no XML do nand2tetris)
+    tokens_sem_eof = [t for t in tokens if t.type != TokenType.EOF]
+    
+    # ✅ Lista completa de XML esperado (ordem exata, formato nand2tetris)
+    # ⚠️ Note: espaços dentro de TODAS as tags
+    esperado_xml = [
+        '<keyword> class </keyword>',
+        '<identifier> Main </identifier>',
+        '<symbol> { </symbol>',
+        '<keyword> function </keyword>',
+        '<keyword> void </keyword>',
+        '<identifier> main </identifier>',
+        '<symbol> ( </symbol>',
+        '<symbol> ) </symbol>',
+        '<symbol> { </symbol>',
+        '<keyword> let </keyword>',
+        '<identifier> x </identifier>',
+        '<symbol> = </symbol>',
+        '<integerConstant> 5 </integerConstant>',
+        '<symbol> ; </symbol>',
+        '<keyword> return </keyword>',
+        '<symbol> ; </symbol>',
+        '<symbol> } </symbol>',
+        '<symbol> } </symbol>',
+    ]
+    
+    # ✅ Validação 1: número correto de tokens (sem EOF)
+    assert len(tokens_sem_eof) == len(esperado_xml), \
+        f"Quantidade de tokens incorreta:\n  Esperado: {len(esperado_xml)}\n  Obtido: {len(tokens_sem_eof)}"
+    
+    # ✅ Validação 2: cada token na posição correta (via XML)
+    for i, (token, xml_exp) in enumerate(zip(tokens_sem_eof, esperado_xml)):
+        assert token.to_xml() == xml_exp, \
+            f"Token {i} na posição incorreta:\n  Esperado: {xml_exp}\n  Obtido:   {token.to_xml()}"
+    
+    # ✅ Validação 3: gera o XML completo com wrapper <tokens>
+    xml_completo = "<tokens>\n"
+    for token in tokens_sem_eof:
+        xml_completo += token.to_xml() + "\n"
+    xml_completo += "</tokens>\n"
+    
+    # ✅ Validação 4: verifica estrutura do documento XML
+    assert xml_completo.startswith("<tokens>\n"), "XML deve iniciar com <tokens>"
+    assert xml_completo.endswith("</tokens>\n"), "XML deve terminar com </tokens>"
+    
+    # ✅ Validação 5: verifica que todos os tokens esperados estão no XML
+    for xml_exp in esperado_xml:
+        assert xml_exp + "\n" in xml_completo, f"Token não encontrado no XML: {xml_exp}"
+    
+    # ✅ Opcional: imprime o XML para conferência visual
+    print("✅ Teste de código Jack completo com XML passou!")
+    print("\n📄 XML Gerado:")
+    print(xml_completo)

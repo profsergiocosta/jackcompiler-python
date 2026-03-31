@@ -50,10 +50,36 @@ class Scanner:
             self.current += 1
 
     def skip_whitespace(self):
-        """Pula espaços, tabs e quebras de linha."""
-        while self.peek() in ' \\t\\r\\n':
-            if self.peek() == '\\n':
+        while True:
+            c = self.peek()
+
+            if c == ' ' or c == '\t':
+                self.advance()
+            elif c == '\r':
+                self.advance()
+            elif c == '\n':
                 self.line += 1
+                self.advance()
+            else:
+                break
+
+    def skip_line_comment(self):
+        """Pula caracteres até o fim da linha."""
+        while self.peek() not in '\\n\\0':
+            self.advance()
+
+    def skip_block_comment(self):
+        """Pula caracteres até encontrar */"""
+        self.advance()  # consome '/'
+        self.advance()  # consome '*'
+
+        while True:
+            if self.peek() == '\\0':
+                raise SyntaxError("Comentário /* não fechado")
+            if self.peek() == '*' and self.peek(1) == '/':
+                self.advance()  # consome '*'
+                self.advance()  # consome '/'
+                break
             self.advance()
 
     def read_number(self) -> Token:
@@ -97,15 +123,26 @@ class Scanner:
         while self.current < len(self.code):
             self.skip_whitespace()
 
+            if self.current >= len(self.code):
+                break
+
             ch = self.peek()
+
+            # ⭐ Comentários (verificar ANTES de símbolos com /)
+            if ch == '/' and self.peek(1) == '/':
+                self.skip_line_comment()
+                continue
+            if ch == '/' and self.peek(1) == '*':
+                self.skip_block_comment()
+                continue
 
             if ch.isdigit():
                 self.tokens.append(self.read_number())
-            elif ch == '"': 
+            elif ch == '"':
                 self.tokens.append(self.read_string())
-            elif ch.isalpha() or ch == '_':  
+            elif ch.isalpha() or ch == '_':
                 self.tokens.append(self.read_identifier())
-            elif ch in self.SYMBOLS:  
+            elif ch in self.SYMBOLS:
                 self.tokens.append(Token(self.SYMBOLS[ch], ch, self.line))
                 self.advance()
             else:
@@ -113,3 +150,4 @@ class Scanner:
 
         self.tokens.append(Token(TokenType.EOF, "", self.line))
         return self.tokens
+    
