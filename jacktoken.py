@@ -68,7 +68,7 @@ class Token:
     def to_xml(self) -> str:
         category = self._get_category()
         value = self._escape_xml(self.lexeme)
-        return f"<{category}>{value} </{category}>"
+        return f"<{category}> {value} </{category}>"
     
     def _get_category(self) -> str:
         if self.type == TokenType.IDENT:
