@@ -64,3 +64,31 @@ class Token:
     type: TokenType
     lexeme: str
     line: int
+
+    def to_xml(self) -> str:
+        category = self._get_category()
+        value = self._escape_xml(self.lexeme)
+        return f"<{category}>{value} </{category}>"
+    
+    def _get_category(self) -> str:
+        if self.type == TokenType.IDENT:
+            return "identifier"
+        elif self.type == TokenType.NUMBER:
+            return "integerConstant"
+        elif self.type == TokenType.STRING:
+            return "stringConstant"
+        elif self.type.name in [e.name for e in TokenType if e.value == "keyword"]:
+            return "keyword"
+        else:
+            return "symbol"
+    
+    def _escape_xml(self, text: str) -> str:
+        escapes = {
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            '&': '&amp;'
+        }
+        for char, escaped in escapes.items():
+            text = text.replace(char, escaped)
+        return text
