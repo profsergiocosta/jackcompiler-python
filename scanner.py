@@ -65,6 +65,23 @@ class Scanner:
         lexeme = self.code[start:self.current]
         return Token(TokenType.NUMBER, lexeme, self.line)
     
+    def read_string(self) -> Token:
+        self.advance()  # consome a aspa inicial "
+        start = self.current
+
+        # Lê até encontrar a aspa de fechamento ou fim do arquivo
+        while self.peek() != '"' and self.peek() != '\\0':
+            if self.peek() == '\\n':
+                raise SyntaxError(f"String não fechada na linha {self.line}")
+            self.advance()
+
+        if self.peek() == '\\0':
+            raise SyntaxError(f"String não fechada na linha {self.line}")
+
+        lexeme = self.code[start:self.current]  # conteúdo sem aspas
+        self.advance()  # consome a aspa final "
+        return Token(TokenType.STRING, lexeme, self.line)
+    
     def tokenize(self) -> list:
         while self.current < len(self.code):
             self.skip_whitespace()
@@ -73,8 +90,9 @@ class Scanner:
 
             if ch.isdigit():
                 self.tokens.append(self.read_number())
+            elif ch == '"':  # ⭐ Nova condição para strings
+                self.tokens.append(self.read_string())
             else:
-                # Ainda não lidamos com outros caracteres
                 self.advance()
 
         self.tokens.append(Token(TokenType.EOF, "", self.line))

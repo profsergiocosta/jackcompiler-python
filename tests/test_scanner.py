@@ -33,3 +33,12 @@ def test_numeros_com_xml():
     
     print("✅ Todos os testes de número com XML passaram!")
 
+def test_string_basica():
+    """Testa o reconhecimento de uma string simples."""
+    code = '"hello"'
+    scanner = Scanner(code)
+    tokens = scanner.tokenize()
+
+    assert tokens[0].type == TokenType.STRING
+    assert tokens[0].lexeme == "hello"  # sem aspas!
+    assert tokens[0].to_xml() == '<stringConstant> hello </stringConstant>'
