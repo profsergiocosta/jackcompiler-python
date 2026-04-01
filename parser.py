@@ -68,3 +68,13 @@ class Parser:
             raise SyntaxError(f"Termo esperado, encontrado: {token.lexeme}")
             
         self.close_tag("term")
+
+    def parse_expression(self):
+        self.open_tag("expression")
+        self.parse_term()
+        
+        while self.peek() and self.peek().lexeme in "+-*/&|<>=~":
+            self.write_token(self.advance()) # Escreve o operador
+            self.parse_term()
+            
+        self.close_tag("expression")

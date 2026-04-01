@@ -13,3 +13,13 @@ def test_parse_term_integer():
     
     assert "<term>" in xml
     assert "<integerConstant> 10 </integerConstant>" in xml
+
+def test_parse_expression():
+    code = "10 + 20"
+    tokens = [t for t in Scanner(code).tokenize() if t.type.name != 'EOF']
+    parser = Parser(tokens)
+    parser.parse_expression()
+    xml = parser.get_xml()
+    
+    assert "<expression>" in xml
+    assert "<symbol> + </symbol>" in xml
