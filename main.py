@@ -3,6 +3,8 @@
 from scanner import Scanner
 from jacktoken import TokenType
 
+from parser import Parser
+
 with open('tests/nand2tetris_files/Square/Main.jack', 'r') as f:
     code = f.read()
 
@@ -19,3 +21,8 @@ with open('output/Square/MainT.xml', 'w') as f:
     f.write(xml)
 
 print('✅ XML gerado em output/Square/MainT.xml')
+
+p = Parser(tokens)
+p.write_token(tokens[0])
+print (p)
+print (p.get_xml())
