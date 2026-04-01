@@ -23,3 +23,13 @@ def test_parse_expression():
     
     assert "<expression>" in xml
     assert "<symbol> + </symbol>" in xml
+
+def test_parse_let():
+    code = "let x = 5;"
+    tokens = [t for t in Scanner(code).tokenize() if t.type.name != 'EOF']
+    parser = Parser(tokens)
+    parser.parse_let()
+    xml = parser.get_xml()
+    print (xml)
+    assert "<letStatement>" in xml
+    assert "<keyword> let </keyword>" in xml

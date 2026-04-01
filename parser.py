@@ -24,6 +24,7 @@ class Parser:
         """Verifica se o token atual é do tipo esperado e avança."""
         token = self.peek()
         if token and token.type == expected_type:
+            self.write_token(token)
             return self.advance()
         raise SyntaxError(f"Erro de sintaxe: Esperado {expected_type}, encontrado {token}")
 
@@ -78,3 +79,19 @@ class Parser:
             self.parse_term()
             
         self.close_tag("expression")
+
+    def parse_let(self):
+        self.open_tag("letStatement")
+        self.match(TokenType.LET)
+        self.match(TokenType.IDENT)
+
+        # Verifica acesso a array opcional [...]
+        if self.peek() and self.peek().lexeme == '[':
+            self.write_token(self.advance()) # [
+            self.parse_expression()
+            self.match(TokenType.RBRACKET) # ]
+
+        self.match(TokenType.EQ)
+        self.parse_expression()
+        self.match(TokenType.SEMICOLON)
+        self.close_tag("letStatement")
