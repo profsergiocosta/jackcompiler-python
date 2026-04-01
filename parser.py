@@ -49,3 +49,22 @@ class Parser:
 
     def get_xml(self) -> str:
         return "\n".join(self.xml_output)
+    
+    def parse_term(self):
+        self.open_tag("term")
+        token = self.peek()
+        
+        if token.type in [TokenType.NUMBER]:
+            self.write_token(self.advance())
+        elif token.type in [TokenType.STRING]:
+            self.write_token(self.advance())
+        elif token.type in [TokenType.TRUE, TokenType.FALSE, TokenType.NULL, TokenType.THIS]:
+            self.write_token(self.advance())
+        elif token.type == TokenType.IDENT:
+            # Aqui precisaremos de lookahead para distinguir var, array ou call
+            # Por enquanto, tratamos como identificador simples
+            self.write_token(self.advance())
+        else:
+            raise SyntaxError(f"Termo esperado, encontrado: {token.lexeme}")
+            
+        self.close_tag("term")
