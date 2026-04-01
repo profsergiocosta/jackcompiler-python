@@ -1,0 +1,36 @@
+<class>
+  <keyword> class </keyword>
+  <identifier> Main </identifier>
+  <subroutineDec>
+    <keyword> function </keyword>
+    <keyword> void </keyword>
+    <identifier> main </identifier>
+    <parameterList>
+    </parameterList>
+    <subroutineBody>
+      <statements>
+        <letStatement>
+          <keyword> let </keyword>
+          <identifier> x </identifier>
+          <expression>
+            <term>
+              <integerConstant> 10 </integerConstant>
+            </term>
+          </expression>
+        </letStatement>
+        <letStatement>
+          <keyword> let </keyword>
+          <identifier> a </identifier>
+          <expression>
+            <term>
+              <integerConstant> 20 </integerConstant>
+            </term>
+          </expression>
+        </letStatement>
+        <returnStatement>
+          <keyword> return </keyword>
+        </returnStatement>
+      </statements>
+    </subroutineBody>
+  </subroutineDec>
+</class>

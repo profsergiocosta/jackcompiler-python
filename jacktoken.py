@@ -97,3 +97,6 @@ class Token:
         for char, escaped in escapes.items():
             text = text.replace(char, escaped)
         return text
+    
+print (TokenType.SEMICOLON)
+print (TokenType.FALSE)

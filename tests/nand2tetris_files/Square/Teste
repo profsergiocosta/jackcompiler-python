@@ -1,0 +1,9 @@
+
+class Main {
+      function void main() {
+       let x = -10
+       if() {}
+      return;
+    }
+
+}
