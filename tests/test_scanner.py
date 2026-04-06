@@ -63,7 +63,7 @@ def test_identificadores_e_keywords():
     # Palavra reservada
     scanner = Scanner("return")
     tokens = scanner.tokenize()
-    assert tokens[0].type == TokenType.FUNCTION
+    assert tokens[0].type == TokenType.RETURN
     assert tokens[0].lexeme == "return"
     assert tokens[0].to_xml() == '<keyword> return </keyword>'
 

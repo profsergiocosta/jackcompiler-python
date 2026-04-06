@@ -18,7 +18,7 @@ class Scanner:
             '/': TokenType.SLASH, '&': TokenType.AND,
             '|': TokenType.OR, '<': TokenType.LT,
             '>': TokenType.GT, '=': TokenType.EQ,
-            '~': TokenType.NOT, '=': TokenType.NOT,
+            '~': TokenType.NOT, # O símbolo NOT em Jack é o til
         }
 
         # Mapa de palavras reservadas
@@ -36,130 +36,116 @@ class Scanner:
             'return': TokenType.RETURN,
         }
 
+    def is_at_end(self) -> bool:
+        return self.current >= len(self.code)
+
     def peek(self, offset=0) -> str:
         """Olha o caractere na posição atual + offset, sem avançar."""
         pos = self.current + offset
         if pos < len(self.code):
             return self.code[pos]
-        return '\\0'  # caractere nulo = fim do código
+        return '\0' 
 
-    def advance(self) -> None:
-        """Avança um caractere e atualiza a contagem de linhas."""
-        if self.current < len(self.code):
-            if self.code[self.current] == '\\n':
-                self.line += 1
-            self.current += 1
-
+    def advance(self) -> str:
+        """Avança um caractere, atualiza a linha e retorna o caractere consumido."""
+        char = self.code[self.current]
+        self.current += 1
+        
+        if char == '\n':
+            self.line += 1
+            
+        return char
+            
     def skip_whitespace(self):
-        while True:
+        """Consome espaços em branco, tabs e novas linhas."""
+        while not self.is_at_end():
             c = self.peek()
-
-            if c == ' ' or c == '\t':
-                self.advance()
-            elif c == '\r':
-                self.advance()
-            elif c == '\n':
-                self.line += 1
+            if c in (' ', '\t', '\r', '\n'):
                 self.advance()
             else:
                 break
 
-    def skip_line_comment(self):
-        while self.peek() not in '\n\0':
-            self.advance()
-
-        if self.peek() == '\n':
-            self.line += 1
-            self.advance()
-
-    def skip_block_comment(self):
-        self.advance()  # '/'
-        self.advance()  # '*'
-
-        while True:
-            c = self.peek()
-
-            if c == '\0':
-                raise SyntaxError("Comentário /* não fechado")
-
-            if c == '\n':
-                self.line += 1
-                self.advance()
-                continue
-
-            if c == '*' and self.peek(1) == '/':
-                self.advance()  # '*'
-                self.advance()  # '/'
-                break
-
-            self.advance()
-
     def read_number(self) -> Token:
+        """Lê um número inteiro (integerConstant)."""
         start = self.current
-        # Consome todos os dígitos consecutivos
+        
         while self.peek().isdigit():
             self.advance()
 
+        # O fatiamento pega do 'start' até o 'current' (que agora está após o último dígito)
         lexeme = self.code[start:self.current]
         return Token(TokenType.NUMBER, lexeme, self.line)
-    
-    def read_string(self) -> Token:
-        self.advance()  # consome a aspa inicial "
-        start = self.current
 
-        # Lê até encontrar a aspa de fechamento ou fim do arquivo
-        while self.peek() != '"' and self.peek() != '\\0':
-            if self.peek() == '\\n':
-                raise SyntaxError(f"String não fechada na linha {self.line}")
-            self.advance()
-
-        if self.peek() == '\\0':
-            raise SyntaxError(f"String não fechada na linha {self.line}")
-
-        lexeme = self.code[start:self.current]  # conteúdo sem aspas
-        self.advance()  # consome a aspa final "
-        return Token(TokenType.STRING, lexeme, self.line)
-    
-    def read_identifier(self) -> Token:
-        start = self.current
-        # Aceita letras, dígitos e underscore
-        while self.peek().isalnum() or self.peek() == '_':
-            self.advance()
-
-        lexeme = self.code[start:self.current]
-        # Decide: é keyword ou identificador comum?
-        token_type = self.KEYWORDS.get(lexeme, TokenType.IDENT)
-        return Token(token_type, lexeme, self.line)
-    
-    def tokenize(self) -> list:
-        while self.current < len(self.code):
+    def tokenize(self) -> list[Token]:
+        """Laço principal que percorre o código gerando a lista de tokens."""
+        while not self.is_at_end():
             self.skip_whitespace()
-
-            if self.current >= len(self.code):
+            
+            # Checagem extra necessária após o skip_whitespace para evitar ler o EOF
+            if self.is_at_end():
                 break
 
             ch = self.peek()
 
-            # ⭐ Comentários (verificar ANTES de símbolos com /)
-            if ch == '/' and self.peek(1) == '/':
-                self.skip_line_comment()
-                continue
-            if ch == '/' and self.peek(1) == '*':
-                self.skip_block_comment()
-                continue
-
-            if ch.isdigit():
-                self.tokens.append(self.read_number())
-            elif ch == '"':
-                self.tokens.append(self.read_string())
-            elif ch.isalpha() or ch == '_':
+            # Identificadores e Keywords (Devem começar com letra ou _)
+            if ch.isalpha() or ch == '_':
                 self.tokens.append(self.read_identifier())
-            elif ch in self.SYMBOLS:
-                self.tokens.append(Token(self.SYMBOLS[ch], ch, self.line))
-                self.advance()
-            else:
-                self.advance()
+            
+            # Lógica para Números
+            elif ch.isdigit():
+                # Nota: Não avançamos aqui, o read_number se encarrega disso
+                self.tokens.append(self.read_number())
+            elif ch == '"':  # ⭐ Nova condição para strings
+                self.tokens.append(self.read_string())
+ 
+            
 
+        # Finaliza com o token de fim de arquivo
         self.tokens.append(Token(TokenType.EOF, "", self.line))
         return self.tokens
     
+    def read_identifier(self) -> Token:
+        """Lê um identificador ou uma palavra-chave (keyword)."""
+        # Define o ponto de início (onde está a primeira letra ou _)
+        start = self.current
+        
+        # Continua consumindo enquanto for letra, número ou underscore
+        while self.peek().isalnum() or self.peek() == '_':
+            self.advance()
+
+        # Extrai o texto completo
+        lexeme = self.code[start:self.current]
+        
+        # O pulo do gato: tenta buscar no dicionário de keywords.
+        # Se não existir, o padrão (default) é TokenType.IDENT.
+        token_type = self.KEYWORDS.get(lexeme, TokenType.IDENT)
+        
+        return Token(token_type, lexeme, self.line)
+    
+    def read_string(self) -> Token:
+        """Lê uma constante de string delimitada por aspas duplas."""
+        # A aspa inicial já foi vista pelo tokenize, mas ainda não consumida pelo advance
+        # Se o seu tokenize faz 'if ch == "\"": self.read_string()', 
+        # então precisamos consumir a aspa de abertura agora:
+        self.advance()  
+        
+        start = self.current
+
+        # Lê até encontrar a aspa de fechamento ou fim do arquivo
+        while self.peek() != '"' and not self.is_at_end():
+            # No Jack, strings não podem quebrar linha
+            if self.peek() == '\n':
+                raise SyntaxError(f"Erro na linha {self.line}: String constante não pode conter quebra de linha.")
+            self.advance()
+
+        # Se saímos do loop porque o arquivo acabou e não achamos a aspa
+        if self.is_at_end():
+            raise SyntaxError(f"Erro na linha {self.line}: String não fechada (esperado '\"').")
+
+        # Captura o conteúdo entre as aspas
+        lexeme = self.code[start:self.current]
+        
+        # Consome a aspa de fechamento
+        self.advance()  
+        
+        return Token(TokenType.STRING, lexeme, self.line)
