@@ -77,33 +77,37 @@ class Scanner:
         return Token(TokenType.NUMBER, lexeme, self.line)
 
     def tokenize(self) -> list[Token]:
-        """Laço principal que percorre o código gerando a lista de tokens."""
         while not self.is_at_end():
             self.skip_whitespace()
+            if self.is_at_end(): break
             
-            # Checagem extra necessária após o skip_whitespace para evitar ler o EOF
-            if self.is_at_end():
-                break
-
             ch = self.peek()
 
-            # Identificadores e Keywords (Devem começar com letra ou _)
+            # 1. Identificadores e Keywords (Devem começar com letra ou _)
             if ch.isalpha() or ch == '_':
                 self.tokens.append(self.read_identifier())
             
-            # Lógica para Números
+            # 2. Números (Devem começar com dígito)
             elif ch.isdigit():
-                # Nota: Não avançamos aqui, o read_number se encarrega disso
                 self.tokens.append(self.read_number())
-            elif ch == '"':  # ⭐ Nova condição para strings
+                
+            # 3. Strings
+            elif ch == '"':
                 self.tokens.append(self.read_string())
- 
-            
+                
+            # 4. Símbolos (Tamanho fixo de 1 caractere no Jack)
+            elif ch in self.SYMBOLS:
+                # Consumimos o símbolo e usamos o dicionário para pegar o tipo
+                lexeme = self.advance()
+                self.tokens.append(Token(self.SYMBOLS[lexeme], lexeme, self.line))
+                
+            else:
+                # Caso encontre algo bizarro como @ ou #
+                raise SyntaxError(f"Caractere ilegal '{ch}' na linha {self.line}")
 
-        # Finaliza com o token de fim de arquivo
         self.tokens.append(Token(TokenType.EOF, "", self.line))
         return self.tokens
-    
+
     def read_identifier(self) -> Token:
         """Lê um identificador ou uma palavra-chave (keyword)."""
         # Define o ponto de início (onde está a primeira letra ou _)
