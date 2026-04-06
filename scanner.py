@@ -55,6 +55,29 @@ class Scanner:
             self.line += 1
             
         return char
+
+    def skip_line_comment(self):
+        """Pula tudo até o final da linha."""
+        # Já sabemos que começou com //, então avançamos até o \n ou fim
+        while self.peek() != '\n' and not self.is_at_end():
+            self.advance()
+
+    def skip_block_comment(self):
+        """Pula comentários de bloco /* ... */ ou /** ... */."""
+        self.advance()  # consome o '*' (o '/' já foi consumido no skip_whitespace)
+
+        while not self.is_at_end():
+            c = self.peek()
+
+            if c == '*' and self.peek(1) == '/':
+                self.advance()  # '*'
+                self.advance()  # '/'
+                return # Comentário fechado com sucesso
+
+            self.advance() # O advance já cuida do self.line += 1 se for '\n'
+
+        # Se saiu do loop sem o return, o arquivo acabou antes do */
+        raise SyntaxError(f"Erro na linha {self.line}: Comentário de bloco '/*' não fechado.")
             
     def skip_whitespace(self):
         """Consome espaços em branco, tabs e novas linhas."""
@@ -76,35 +99,50 @@ class Scanner:
         lexeme = self.code[start:self.current]
         return Token(TokenType.NUMBER, lexeme, self.line)
 
+
     def tokenize(self) -> list[Token]:
         while not self.is_at_end():
             self.skip_whitespace()
             if self.is_at_end(): break
-            
+
             ch = self.peek()
 
-            # 1. Identificadores e Keywords (Devem começar com letra ou _)
-            if ch.isalpha() or ch == '_':
-                self.tokens.append(self.read_identifier())
+            # Caso especial: Barra pode ser divisão ou comentário
+            if ch == '/':
+                if self.peek(1) == '/':
+                    self.advance(); self.advance()
+                    self.skip_line_comment()
+                    continue
+                elif self.peek(1) == '*':
+                    self.advance() 
+                    self.skip_block_comment()
+                    continue
+                else:
+                    # É o símbolo de divisão '/'
+                    lexeme = self.advance()
+                    self.tokens.append(Token(self.SYMBOLS[lexeme], lexeme, self.line))
             
-            # 2. Números (Devem começar com dígito)
+            # Identificadores e Keywords
+            elif ch.isalpha() or ch == '_':
+                self.tokens.append(self.read_identifier())
+
+            # Números
             elif ch.isdigit():
                 self.tokens.append(self.read_number())
-                
-            # 3. Strings
+
+            # Strings
             elif ch == '"':
                 self.tokens.append(self.read_string())
-                
-            # 4. Símbolos (Tamanho fixo de 1 caractere no Jack)
+
+            # Símbolos
             elif ch in self.SYMBOLS:
-                # Consumimos o símbolo e usamos o dicionário para pegar o tipo
                 lexeme = self.advance()
                 self.tokens.append(Token(self.SYMBOLS[lexeme], lexeme, self.line))
-                
+
             else:
-                # Caso encontre algo bizarro como @ ou #
                 raise SyntaxError(f"Caractere ilegal '{ch}' na linha {self.line}")
 
+        # Fim de arquivo
         self.tokens.append(Token(TokenType.EOF, "", self.line))
         return self.tokens
 
