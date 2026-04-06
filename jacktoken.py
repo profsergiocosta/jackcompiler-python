@@ -1,66 +1,37 @@
-from enum import Enum
+from enum import Enum, auto
 from dataclasses import dataclass
 
 class TokenType(Enum):
-    """Tipos de tokens suportados"""
-
-    # Literals
-    NUMBER = "integerConst"
-    STRING = "stringConst"
-    IDENT = "identifier"
+    # Literals (Valores únicos automáticos)
+    NUMBER = auto()
+    STRING = auto()
+    IDENT = auto()
 
     # Symbols
-    LPAREN = "symbol"
-    RPAREN = "symbol"
-    LBRACE = "symbol"
-    RBRACE = "symbol"
-    LBRACKET = "symbol"
-    RBRACKET = "symbol"
-    COMMA = "symbol"
-    SEMICOLON = "symbol"
-    DOT = "symbol"
-    PLUS = "symbol"
-    MINUS = "symbol"
-    ASTERISK = "symbol"
-    SLASH = "symbol"
-    AND = "symbol"
-    OR = "symbol"
-    NOT = "symbol"
-    LT = "symbol"
-    GT = "symbol"
-    EQ = "symbol"
+    LPAREN = auto(); RPAREN = auto()
+    LBRACE = auto(); RBRACE = auto()
+    LBRACKET = auto(); RBRACKET = auto()
+    COMMA = auto(); SEMICOLON = auto()
+    DOT = auto(); PLUS = auto()
+    MINUS = auto(); ASTERISK = auto()
+    SLASH = auto(); AND = auto()
+    OR = auto(); NOT = auto()
+    LT = auto(); GT = auto()
+    EQ = auto()
 
     # Keywords
-    CLASS = "keyword"
-    CONSTRUCTOR = "keyword"
-    FUNCTION = "keyword"
-    METHOD = "keyword"
-    FIELD = "keyword"
-    STATIC = "keyword"
-    VAR = "keyword"
-    INT = "keyword"
-    CHAR = "keyword"
-    BOOLEAN = "keyword"
-    VOID = "keyword"
-    TRUE = "keyword"
-    FALSE = "keyword"
-    NULL = "keyword"
-    THIS = "keyword"
-    LET = "keyword"
-    DO = "keyword"
-    IF = "keyword"
-    ELSE = "keyword"
-    WHILE = "keyword"
-    RETURN = "keyword"
+    CLASS = auto(); CONSTRUCTOR = auto(); FUNCTION = auto()
+    METHOD = auto(); FIELD = auto(); STATIC = auto()
+    VAR = auto(); INT = auto(); CHAR = auto()
+    BOOLEAN = auto(); VOID = auto(); TRUE = auto()
+    FALSE = auto(); NULL = auto(); THIS = auto()
+    LET = auto(); DO = auto(); IF = auto()
+    ELSE = auto(); WHILE = auto(); RETURN = auto()
 
-    EOF = "eof"
-
-
-
+    EOF = auto()
 
 @dataclass
 class Token:
-    """Representa um token do programa"""
     type: TokenType
     lexeme: str
     line: int
@@ -71,29 +42,43 @@ class Token:
         return f"<{category}> {value} </{category}>"
     
     def _get_category(self) -> str:
-        if self.type == TokenType.IDENT:
+        """Define a tag XML baseada no intervalo do enum"""
+        t = self.type
+        # Verificação por identidade de membros, agora eles são únicos!
+        if t == TokenType.IDENT:
             return "identifier"
-        elif self.type == TokenType.NUMBER:
+        if t == TokenType.NUMBER:
             return "integerConstant"
-        elif self.type == TokenType.STRING:
+        if t == TokenType.STRING:
             return "stringConstant"
-        elif self.type.name in [e.name for e in TokenType if e.value == "keyword"]:
+        
+        # Lógica para Keywords (baseada nos nomes das variantes)
+        keywords = {
+            "CLASS", "CONSTRUCTOR", "FUNCTION", "METHOD", "FIELD", 
+            "STATIC", "VAR", "INT", "CHAR", "BOOLEAN", "VOID", 
+            "TRUE", "FALSE", "NULL", "THIS", "LET", "DO", 
+            "IF", "ELSE", "WHILE", "RETURN"
+        }
+        if t.name in keywords:
             return "keyword"
-        else:
-            return "symbol"
-    
+        
+        return "symbol"
+
     def _escape_xml(self, text: str) -> str:
-        """
-        Escapa caracteres especiais para XML.
-        ⚠️ IMPORTANTE: & deve ser substituído PRIMEIRO!
-        """
+        # Removido as aspas das strings se for stringConstant (padrão Jack/Nand2Tetris)
+        if self.type == TokenType.STRING:
+            text = text.replace('"', '')
+            
         escapes = {
-            '&': '&amp;',   # ✅ PRIMEIRO para evitar double-escape
+            '&': '&amp;',
             '<': '&lt;',
             '>': '&gt;',
             '"': '&quot;',
         }
-        
         for char, escaped in escapes.items():
             text = text.replace(char, escaped)
         return text
+
+# Teste de Igualdade
+print(f"COMMA == PLUS? {TokenType.COMMA == TokenType.PLUS}") # Retornará False
+print (Token(TokenType.COMMA,",",1).to_xml())
