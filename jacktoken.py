@@ -79,6 +79,3 @@ class Token:
             text = text.replace(char, escaped)
         return text
 
-# Teste de Igualdade
-print(f"COMMA == PLUS? {TokenType.COMMA == TokenType.PLUS}") # Retornará False
-print (Token(TokenType.COMMA,",",1).to_xml())
